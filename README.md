@@ -1,0 +1,1 @@
+## A simple Node-RED *node* to communicate with an IPX800 device from GCE Electronics.

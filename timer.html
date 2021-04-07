@@ -1,0 +1,24 @@
+<script type="text/javascript">
+  RED.nodes.registerType('room timer',{
+      category: 'function',
+      color: 'pink',
+      defaults: {
+        name: {
+          value: ''
+        },
+      },
+      inputs: 1,
+      outputs: 1,
+      icon: "fa-clock",
+      label: function() {
+        return this.name || 'Room timer';
+      }
+  });
+</script>
+
+<script type="text/html" data-template-name="room timer">
+  <div class="form-row">
+      <label for="node-config-input-name">Name</label>
+      <input type="text" id="node-config-input-name" placeholder="Name">
+  </div>
+</script>
