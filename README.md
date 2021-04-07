@@ -1,1 +1,3 @@
-## A simple Node-RED *node* to communicate with an IPX800 device from GCE Electronics.
+## A full-featured timer for Escape Rooms.
+
+Documentation is coming soon, thank you :)
