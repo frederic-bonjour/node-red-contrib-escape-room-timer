@@ -2,15 +2,14 @@ module.exports = function(RED) {
 
 
   function formatTime(t) {
-    const h = Math.floor(t / 3600);
-    let r = t - h * 3600;
-    const m = Math.floor(r / 60);
-    r -= m * 60;
+    const s = t % 60;
+    const m = Math.floor(t / 60);
+    const h = Math.floor(m / 60);
     let str = '';
     if (h) {
       str = h.toString() + ':';
     }
-    return `${str}${m.toString().padStart(2, '0')}:${r.toString().padStart(2, '0')}`;
+    return `${str}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
   function EscapeRoomTimer(config) {
@@ -26,7 +25,11 @@ module.exports = function(RED) {
 
     const updateElapsed = () => {
       elapsed = Math.round((Date.now() - startedAt - pauseDuration - given) / 1000);
-      formatted = formatTime(elapsed);
+      if (config.mode === 'remaining' && config.duration) {
+        formatted = formatTime(config.duration * 60 - elapsed);
+      } else {
+        formatted = formatTime(elapsed);
+      }
       this.status({ fill: 'blue', shape: 'dot', text: `${formatted}` });
     };
 

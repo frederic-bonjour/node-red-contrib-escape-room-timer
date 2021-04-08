@@ -1,15 +1,25 @@
 <script type="text/javascript">
   RED.nodes.registerType('room timer',{
       category: 'function',
-      color: 'pink',
+      color: '#BB8FCE',
       defaults: {
         name: {
           value: ''
         },
+        mode: {
+          value: 'elapsed',
+          validate: function (v) {
+            return v === 'elapsed' || v === 'remaining'
+          }
+        },
+        duration: {
+          value: 60,
+          validate: RED.validators.number()
+        }
       },
       inputs: 1,
       outputs: 1,
-      icon: "fa-clock",
+      icon: "font-awesome/fa-clock-o",
       label: function() {
         return this.name || 'Room timer';
       }
@@ -18,7 +28,18 @@
 
 <script type="text/html" data-template-name="room timer">
   <div class="form-row">
-      <label for="node-config-input-name">Name</label>
-      <input type="text" id="node-config-input-name" placeholder="Name">
+      <label for="node-input-name">Name</label>
+      <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+  <div class="form-row">
+      <label for="node-input-mode">Mode</label>
+      <select id="node-input-mode">
+        <option value="elapsed">elapsed time</option>
+        <option value="remaining">remaining time</option>
+      </select>
+  </div>
+  <div class="form-row">
+      <label for="node-input-duration">Duration</label>
+      <input type="text" id="node-input-duration" placeholder="Duration in minutes">
   </div>
 </script>
