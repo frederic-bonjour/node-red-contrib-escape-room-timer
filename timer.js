@@ -3,8 +3,8 @@ module.exports = function(RED) {
 
   function formatTime(t) {
     const s = t % 60;
-    const m = Math.floor(t / 60);
-    const h = Math.floor(m / 60);
+    const m = Math.floor(t / 60) % 60;
+    const h = Math.floor(t / 3660);
     let str = '';
     if (h) {
       str = h.toString() + ':';
@@ -22,13 +22,16 @@ module.exports = function(RED) {
     let pauseStartedAt = 0;
     let status = 'stopped';
     let given = 0;
+    let percent = -1;
 
     const updateElapsed = () => {
       elapsed = Math.round((Date.now() - startedAt - pauseDuration - given) / 1000);
       if (config.mode === 'remaining' && config.duration) {
         formatted = formatTime(config.duration * 60 - elapsed);
+        percent = Math.round(elapsed / (config.duration * 60) * 100);
       } else {
         formatted = formatTime(elapsed);
+        percent = -1;
       }
       this.status({ fill: 'blue', shape: 'dot', text: `${formatted}` });
     };
@@ -47,7 +50,7 @@ module.exports = function(RED) {
       if (status === 'stopped' || status === 'paused') {
         timerId = setInterval(() => {
           updateElapsed();
-          send({ payload: { elapsed, formatted, status } });
+          send({ payload: { elapsed, formatted, percent, status } });
         }, 1000);
         status = 'running';
         this.status({ fill: 'blue', shape: 'dot', text: `${formatted}` });
