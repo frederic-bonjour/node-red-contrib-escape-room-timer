@@ -48,9 +48,16 @@ module.exports = function(RED) {
       }
 
       if (status === 'stopped' || status === 'paused') {
+        send([
+          { payload: { elapsed, formatted, percent, status } }, // first output
+          { topic: status === 'stopped' ? 'started' : 'resumed' } // second output
+        ]);
         timerId = setInterval(() => {
           updateElapsed();
-          send({ payload: { elapsed, formatted, percent, status } });
+          send([
+            { payload: { elapsed, formatted, percent, status } }, // first output
+            null // second output
+          ]);
         }, 1000);
         status = 'running';
         this.status({ fill: 'blue', shape: 'dot', text: `${formatted}` });
@@ -64,7 +71,10 @@ module.exports = function(RED) {
         timerId = null;
         status = 'paused';
         this.status({ fill: 'yellow', shape: 'ring', text: `${formatted} (${status})` });
-        send({ payload: { elapsed, formatted, status } });
+        send([
+          { payload: { elapsed, formatted, status } },
+          { topic: 'paused' }
+        ]);
       }
     };
 
@@ -76,7 +86,10 @@ module.exports = function(RED) {
         pauseDuration = 0;
         pauseStartedAt = 0;
         this.status({ fill: 'grey', shape: 'ring', text: `${formatted} (${status})` });
-        send({ payload: { elapsed, formatted, status } });
+        send([
+          { payload: { elapsed, formatted, status } },
+          { topic: 'stopped' }
+        ]);
       }
     };
 
@@ -110,5 +123,6 @@ module.exports = function(RED) {
       done();
     });    
   }
+
   RED.nodes.registerType("room timer", EscapeRoomTimer);
 }; 
