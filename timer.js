@@ -64,6 +64,20 @@ module.exports = function(RED) {
       }
     };
 
+    const reset = (send) => {
+      formatted = '00:00';
+      elapsed = 0;
+      given = 0;
+      percent = -1;
+      status = 'stopped';
+
+      send([
+        { payload: { elapsed, formatted, percent, status } }, // first output
+        { topic: status } // second output
+      ]);
+      this.status({ fill: 'blue', shape: 'dot', text: `${formatted}` });
+    };
+
     const pause = (send) => {
       if (status === 'running') {
         pauseStartedAt = Date.now();
@@ -114,6 +128,10 @@ module.exports = function(RED) {
         case 'give':
           give(msg.payload);
           break;
+        case 'reset':
+          stop(send);
+          reset(send);
+          break;
       }
     });
 
@@ -121,7 +139,7 @@ module.exports = function(RED) {
       if (timerId) clearInterval(timerId);
       timerId = null;
       done();
-    });    
+    });
   }
 
   RED.nodes.registerType("room timer", EscapeRoomTimer);
