@@ -23,6 +23,7 @@ module.exports = function(RED) {
     let status = 'stopped';
     let given = 0;
     let percent = -1;
+    const node = this;
 
     const updateElapsed = () => {
       elapsed = Math.round((Date.now() - startedAt - pauseDuration - given) / 1000);
@@ -70,7 +71,6 @@ module.exports = function(RED) {
       given = 0;
       percent = -1;
       status = 'stopped';
-
       send([
         { payload: { elapsed, formatted, percent, status } }, // first output
         { topic: status } // second output
@@ -133,6 +133,7 @@ module.exports = function(RED) {
           reset(send);
           break;
       }
+      if (done) done();
     });
 
     this.on('close', function(done) {
