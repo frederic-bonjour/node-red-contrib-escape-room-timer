@@ -29,11 +29,10 @@ module.exports = function(RED) {
       elapsed = Math.round((Date.now() - startedAt - pauseDuration - given) / 1000);
       if (config.mode === 'remaining' && config.duration) {
         formatted = formatTime(config.duration * 60 - elapsed);
-        percent = Math.round(elapsed / (config.duration * 60) * 100);
       } else {
         formatted = formatTime(elapsed);
-        percent = -1;
       }
+      percent = Math.round(elapsed / (config.duration * 60) * 100);
       this.status({ fill: 'blue', shape: 'dot', text: `${formatted}` });
     };
 
@@ -114,6 +113,11 @@ module.exports = function(RED) {
       }
     };
 
+    const remove = (amount) => {
+      given -= amount * 1000;
+      updateElapsed();
+    };
+
     this.on('input', async (msg, send, done) => {
       switch (msg.topic) {
         case 'start':
@@ -128,10 +132,18 @@ module.exports = function(RED) {
         case 'give':
           give(msg.payload);
           break;
+        case 'remove':
+          remove(msg.payload);
+          break;
         case 'reset':
           stop(send);
           reset(send);
           break;
+        case 'resend':
+          send([
+            { payload: { elapsed, formatted, status } },
+            null
+          ]);
       }
       if (done) done();
     });
