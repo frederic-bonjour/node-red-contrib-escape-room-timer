@@ -34,8 +34,8 @@ module.exports = function(RED) {
         percent = Math.round(elapsed / (config.duration * 60) * 100);
       } else {
         formatted = formatTime(elapsed);
-        percent = -1;
       }
+      percent = Math.round(elapsed / (config.duration * 60) * 100);
       this.status({ fill: 'blue', shape: 'dot', text: `${formatted}` });
     };
 
@@ -125,12 +125,16 @@ module.exports = function(RED) {
       }
     };
 
+    const remove = (amount) => {
+      given -= amount * 1000;
+      updateElapsed();
+    };
+
     this.on('input', async (msg, send, done) => {
       switch (msg.topic) {
         case 'config':
           if (msg.payload.duration) {
             config.duration = parseInt(msg.payload.duration)
-console.log('--- timer: set new duration', config.duration)
           }
           break;
         case 'start':
@@ -145,10 +149,18 @@ console.log('--- timer: set new duration', config.duration)
         case 'give':
           give(msg.payload);
           break;
+        case 'remove':
+          remove(msg.payload);
+          break;
         case 'reset':
           stop(send);
           reset(send);
           break;
+        case 'resend':
+          send([
+            { payload: makePayload() },
+            null
+          ]);
       }
       if (done) done();
     });
@@ -161,4 +173,5 @@ console.log('--- timer: set new duration', config.duration)
   }
 
   RED.nodes.registerType("room timer", EscapeRoomTimer);
-}; 
+};
+
