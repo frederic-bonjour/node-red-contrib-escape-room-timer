@@ -4,7 +4,7 @@ module.exports = function(RED) {
   function formatTime(t) {
     const s = t % 60;
     const m = Math.floor(t / 60) % 60;
-    const h = Math.floor(t / 3660);
+    const h = Math.floor(t / 3600);
     let str = '';
     if (h) {
       str = h.toString() + ':';
@@ -16,6 +16,7 @@ module.exports = function(RED) {
     RED.nodes.createNode(this, config);
     let timerId;
     let elapsed;
+    let remaining;
     let formatted;
     let startedAt = 0;
     let pauseDuration = 0;
@@ -27,14 +28,19 @@ module.exports = function(RED) {
 
     const updateElapsed = () => {
       elapsed = Math.round((Date.now() - startedAt - pauseDuration - given) / 1000);
+      remaining = config.duration * 60 - elapsed
       if (config.mode === 'remaining' && config.duration) {
-        formatted = formatTime(config.duration * 60 - elapsed);
+        formatted = formatTime(remaining);
         percent = Math.round(elapsed / (config.duration * 60) * 100);
       } else {
         formatted = formatTime(elapsed);
         percent = -1;
       }
       this.status({ fill: 'blue', shape: 'dot', text: `${formatted}` });
+    };
+
+    const makePayload = () => {
+      return { elapsed, formatted, percent, remaining, status, duration: formatTime(config.duration * 60) }
     };
 
     const start = (send) => {
@@ -50,15 +56,19 @@ module.exports = function(RED) {
 
       if (status === 'stopped' || status === 'paused') {
         send([
-          { payload: { elapsed, formatted, percent, status } }, // first output
+          { payload: makePayload() }, // first output
           { topic: status === 'stopped' ? 'started' : 'resumed' } // second output
         ]);
         timerId = setInterval(() => {
           updateElapsed();
-          send([
-            { payload: { elapsed, formatted, percent, status } }, // first output
-            null // second output
-          ]);
+          if (remaining === 0) {
+            stop(send);
+          } else {
+            send([
+              { payload: makePayload() }, // first output
+              null // second output
+            ]);
+          }
         }, 1000);
         status = 'running';
         this.status({ fill: 'blue', shape: 'dot', text: `${formatted}` });
@@ -70,10 +80,11 @@ module.exports = function(RED) {
       elapsed = 0;
       given = 0;
       percent = -1;
+      const statusChanged = status !== 'stopped'
       status = 'stopped';
       send([
-        { payload: { elapsed, formatted, percent, status } }, // first output
-        { topic: status } // second output
+        { payload: makePayload() }, // first output
+        statusChanged ? { topic: status } : null // second output
       ]);
       this.status({ fill: 'blue', shape: 'dot', text: `${formatted}` });
     };
@@ -86,7 +97,7 @@ module.exports = function(RED) {
         status = 'paused';
         this.status({ fill: 'yellow', shape: 'ring', text: `${formatted} (${status})` });
         send([
-          { payload: { elapsed, formatted, status } },
+          { payload: makePayload() },
           { topic: 'paused' }
         ]);
       }
@@ -101,7 +112,7 @@ module.exports = function(RED) {
         pauseStartedAt = 0;
         this.status({ fill: 'grey', shape: 'ring', text: `${formatted} (${status})` });
         send([
-          { payload: { elapsed, formatted, status } },
+          { payload: makePayload() },
           { topic: 'stopped' }
         ]);
       }
@@ -116,6 +127,12 @@ module.exports = function(RED) {
 
     this.on('input', async (msg, send, done) => {
       switch (msg.topic) {
+        case 'config':
+          if (msg.payload.duration) {
+            config.duration = parseInt(msg.payload.duration)
+console.log('--- timer: set new duration', config.duration)
+          }
+          break;
         case 'start':
           start(send);
           break;
